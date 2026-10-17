@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:17.6-bookworm
+    environment:
+      POSTGRES_DB: tasks
+      POSTGRES_USER: tasks
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U tasks -d tasks"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  migrate:
+    build: .
+    command: [flask, --app, app.main, init-db]
+    environment: &db-env
+      PGHOST: db
+      PGDATABASE: tasks
+      PGUSER: tasks
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    depends_on:
+      db: {condition: service_healthy}
+  web:
+    build: .
+    ports: ["127.0.0.1:8080:8080"]
+    environment: *db-env
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+volumes:
+  pgdata:

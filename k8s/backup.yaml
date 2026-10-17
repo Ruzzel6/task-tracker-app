@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: database-backup
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: database-backup
+spec:
+  schedule: 0 2 * * *
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 1800
+      template:
+        spec:
+          serviceAccountName: database-backup
+          restartPolicy: Never
+          containers:
+          - name: backup
+            image: BACKUP_IMAGE
+            env:
+            - name: PGHOST
+              value: db
+            - name: PGDATABASE
+              value: tasks
+            - name: PGUSER
+              value: tasks
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: database
+                  key: password
+            - name: BACKUP_BUCKET
+              value: REPLACE_BUCKET
+            - name: AWS_REGION
+              value: REPLACE_REGION
+            resources:
+              requests:
+                cpu: 100m
+                memory: 128Mi
+              limits:
+                cpu: '1'
+                memory: 512Mi

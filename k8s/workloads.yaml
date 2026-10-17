@@ -1,0 +1,197 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tasks
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+spec:
+  clusterIP: None
+  selector:
+    app: db
+  ports:
+  - port: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: db
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  serviceName: db
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name: postgres
+        image: postgres:17.6-bookworm
+        env:
+        - name: POSTGRES_DB
+          value: tasks
+        - name: POSTGRES_USER
+          value: tasks
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: database
+              key: password
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        ports:
+        - containerPort: 5432
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: '1'
+            memory: 1Gi
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - tasks
+            - -d
+            - tasks
+          initialDelaySeconds: 5
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      storageClassName: gp3
+      resources:
+        requests:
+          storage: 5Gi
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gp3
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp3
+  encrypted: 'true'
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  annotations:
+    argocd.argoproj.io/sync-wave: '2'
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name: web
+        image: TASKS_IMAGE
+        env:
+        - name: PGHOST
+          value: db
+        - name: PGDATABASE
+          value: tasks
+        - name: PGUSER
+          value: tasks
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: database
+              key: password
+        ports:
+        - containerPort: 8080
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 10001
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8080
+          initialDelaySeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8080
+          initialDelaySeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+spec:
+  selector:
+    app: web
+  ports:
+  - port: 8080
+    targetPort: 8080
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: schema-init
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: '1'
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+spec:
+  backoffLimit: 5
+  template:
+    spec:
+      restartPolicy: OnFailure
+      automountServiceAccountToken: false
+      containers:
+      - name: migrate
+        image: TASKS_IMAGE
+        env:
+        - name: PGHOST
+          value: db
+        - name: PGDATABASE
+          value: tasks
+        - name: PGUSER
+          value: tasks
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: database
+              key: password
+        command:
+        - flask
+        - --app
+        - app.main
+        - init-db

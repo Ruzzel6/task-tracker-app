@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: tasks
+resources:
+  - workloads.yaml
+  - backup.yaml
+images:
+  - name: TASKS_IMAGE
+    newName: REPLACE_ACCOUNT.dkr.ecr.REPLACE_REGION.amazonaws.com/tasks
+    newTag: REPLACE_COMMIT_SHA
+  - name: BACKUP_IMAGE
+    newName: REPLACE_ACCOUNT.dkr.ecr.REPLACE_REGION.amazonaws.com/tasks-backup
+    newTag: REPLACE_COMMIT_SHA

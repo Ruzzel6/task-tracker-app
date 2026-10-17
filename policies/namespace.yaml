@@ -1,0 +1,22 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: reject-test-namespaces
+spec:
+  background: false
+  rules:
+    - name: reject-test-prefix
+      match:
+        any:
+          - resources:
+              kinds: [Namespace]
+              operations: [CREATE]
+      validate:
+        failureAction: Enforce
+        message: Namespace names must not start with test.
+        deny:
+          conditions:
+            any:
+              - key: "{{ request.object.metadata.name }}"
+                operator: Equals
+                value: "test*"
