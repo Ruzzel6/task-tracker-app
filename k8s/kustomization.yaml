@@ -6,8 +6,8 @@ resources:
   - backup.yaml
 images:
   - name: TASKS_IMAGE
-    newName: REPLACE_ACCOUNT.dkr.ecr.REPLACE_REGION.amazonaws.com/tasks
-    newTag: REPLACE_COMMIT_SHA
+    newName: 798452926094.dkr.ecr.ap-south-1.amazonaws.com/tasks
+    newTag: b0ef008-20261022144605
   - name: BACKUP_IMAGE
-    newName: REPLACE_ACCOUNT.dkr.ecr.REPLACE_REGION.amazonaws.com/tasks-backup
-    newTag: REPLACE_COMMIT_SHA
+    newName: 798452926094.dkr.ecr.ap-south-1.amazonaws.com/tasks-backup
+    newTag: b0ef008-20261022144605

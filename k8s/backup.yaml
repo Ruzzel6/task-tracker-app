@@ -8,7 +8,7 @@ kind: CronJob
 metadata:
   name: database-backup
 spec:
-  schedule: 0 2 * * *
+  schedule: '*/5 * * * *'
   timeZone: Etc/UTC
   concurrencyPolicy: Forbid
   startingDeadlineSeconds: 3600
@@ -38,9 +38,9 @@ spec:
                   name: database
                   key: password
             - name: BACKUP_BUCKET
-              value: REPLACE_BUCKET
+              value: tasks-backups-798452926094-ap-south-1
             - name: AWS_REGION
-              value: REPLACE_REGION
+              value: ap-south-1
             resources:
               requests:
                 cpu: 100m

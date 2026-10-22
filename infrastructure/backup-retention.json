@@ -1,0 +1,20 @@
+{
+  "Rules": [
+    {
+      "ID": "tasks-backup-retention",
+      "Status": "Enabled",
+      "Filter": {
+        "Prefix": "tasks/"
+      },
+      "Expiration": {
+        "Days": 7
+      },
+      "NoncurrentVersionExpiration": {
+        "NoncurrentDays": 7
+      },
+      "AbortIncompleteMultipartUpload": {
+        "DaysAfterInitiation": 1
+      }
+    }
+  ]
+}

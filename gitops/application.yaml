@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/REPLACE_OWNER/REPLACE_REPO.git
+    repoURL: https://github.com/ruzzel6/task-tracker-app.git
     targetRevision: main
     path: k8s
   destination:
