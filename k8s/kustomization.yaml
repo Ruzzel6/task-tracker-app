@@ -2,12 +2,12 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: tasks
 resources:
-  - workloads.yaml
-  - backup.yaml
+- workloads.yaml
+- backup.yaml
 images:
-  - name: TASKS_IMAGE
-    newName: 798452926094.dkr.ecr.ap-south-1.amazonaws.com/tasks
-    newTag: b0ef008-20261022144605
-  - name: BACKUP_IMAGE
-    newName: 798452926094.dkr.ecr.ap-south-1.amazonaws.com/tasks-backup
-    newTag: b0ef008-20261022144605
+- name: TASKS_IMAGE
+  newName: 798452926094.dkr.ecr.ap-south-1.amazonaws.com/tasks
+  newTag: b0ef008-20261022144605
+- name: BACKUP_IMAGE
+  newName: 798452926094.dkr.ecr.ap-south-1.amazonaws.com/tasks-backup
+  newTag: podidentity-fix-20261022155036
